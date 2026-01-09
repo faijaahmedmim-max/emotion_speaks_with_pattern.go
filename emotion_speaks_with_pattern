@@ -1,0 +1,174 @@
+import java.util.*;
+
+public class FF {
+
+    static Scanner sc = new Scanner(System.in);
+    static Random rand = new Random();
+
+    // Emotion names (index-based)
+    static String[] emotionNames = {
+            "Anxiety", "Calm", "Happiness", "Sadness", "Loneliness", "Anger"
+    };
+
+    // Multiple emojis per emotion
+    static String[][] emotionEmojiPool = {
+            { "(＞﹏＜)", "(＠_＠;)", "(T⌓T)" },          // Anxiety
+            { "(￣︶￣)", "(｡-_-｡)", "(•‿•)" },          // Calm
+            { "(≧▽≦)", "(^‿^)", "(^_^)" },              // Happiness
+            { "(T_T)", "(╥﹏╥)", "(︶︹︺)" },            // Sadness
+            { "(´･_･`)", "(︶︿︶)", "(｡•́︿•̀｡)" },      // Loneliness
+            { "(╬ಠ益ಠ)", "(ノಠ益ಠ)ノ", "(ಠ_ಠ)" }         // Anger
+    };
+
+    static String[] poeticPrompts = {
+            "Can you understand my unspoken feeling?",
+            "Do you feel what my silence is hiding?",
+            "Can you read what my heart cannot say?"
+    };
+
+    // Map to store meaning(s) of each kaomoji
+    static Map<String, Set<Integer>> kaomojiMeaningMap = new HashMap<>();
+
+    static {
+        addMeaning("(＞﹏＜)", 0);
+        addMeaning("(＠_＠;)", 0, 3);
+        addMeaning("(T⌓T)", 0, 3);
+
+        addMeaning("(￣︶￣)", 1);
+        addMeaning("(｡-_-｡)", 1);
+        addMeaning("(•‿•)", 1, 2);
+
+        addMeaning("(≧▽≦)", 2);
+        addMeaning("(^‿^)", 2);
+        addMeaning("(^_^)", 2);
+
+        addMeaning("(T_T)", 3);
+        addMeaning("(╥﹏╥)", 3);
+        addMeaning("(︶︹︺)", 3);
+
+        addMeaning("(´･_･`)", 3, 4);
+        addMeaning("(︶︿︶)", 4);
+        addMeaning("(｡•́︿•̀｡)", 4);
+
+        addMeaning("(╬ಠ益ಠ)", 5);
+        addMeaning("(ノಠ益ಠ)ノ", 5);
+        addMeaning("(ಠ_ಠ)", 5, 1);
+    }
+
+    static void addMeaning(String emoji, int... emotions) {
+        kaomojiMeaningMap.putIfAbsent(emoji, new HashSet<>());
+        for (int e : emotions) {
+            kaomojiMeaningMap.get(emoji).add(e);
+        }
+    }
+
+    // Helper class
+    static class GuessSet {
+        List<String> options;
+        String correctEmoji;
+
+        GuessSet(List<String> options, String correctEmoji) {
+            this.options = options;
+            this.correctEmoji = correctEmoji;
+        }
+    }
+
+    public static void main(String[] args) {
+        System.out.println("🌙 Welcome to the Emotion Understanding Game 🌙");
+
+        while (true) {
+            int emotionIndex = rand.nextInt(emotionEmojiPool.length);
+            String hiddenEmoji = randomEmojiFrom(emotionEmojiPool[emotionIndex]);
+
+            // Get meanings of the system emoji
+            Set<Integer> meanings = kaomojiMeaningMap.get(hiddenEmoji);
+            boolean isAmbiguous = meanings != null && meanings.size() > 1;
+
+            System.out.println("\nAn emotion appears...");
+            System.out.println("Emoji: " + hiddenEmoji);
+            if (isAmbiguous) {
+                System.out.println("(This expression feels unclear.)");
+            }
+
+            System.out.println();
+            System.out.println(poeticPrompts[rand.nextInt(poeticPrompts.length)]);
+            System.out.println("1. Yes");
+            System.out.println("2. No");
+            System.out.println("3. Quit guessing");
+            System.out.print("Your choice: ");
+            int choice = sc.nextInt();
+
+            if (choice == 3) {
+                System.out.println("\n🌘 You chose silence over feeling.");
+                break;
+            }
+
+            if (choice == 2) {
+                System.out.println("\n😢 You don't care about my emotion...");
+                System.out.println("(╥﹏╥)");
+                continue;
+            }
+
+            System.out.println("\nThen tell me... what am I feeling?\n");
+
+            GuessSet guessSet = generateEmojiOptions(emotionIndex, hiddenEmoji);
+            List<String> options = guessSet.options;
+            String correctEmoji = guessSet.correctEmoji;
+
+            boolean understood = false;
+            for (int attempt = 1; attempt <= 3; attempt++) {
+                for (int i = 0; i < options.size(); i++) {
+                    System.out.print((i + 1) + ". " + options.get(i) + "   ");
+                }
+
+                System.out.print("\n\nYour guess (" + attempt + "/3): ");
+                int guess = sc.nextInt() - 1;
+
+                if (guess >= 0 && guess < options.size() && options.get(guess).equals(correctEmoji)) {
+                    System.out.println("\n✨ You really understand me.");
+                    understood = true;
+                    break;
+                } else if (attempt < 3) {
+                    System.out.println("\n💭 You're not getting me...");
+                }
+            }
+
+            // Reveal exact meaning(s) of the system emoji
+            System.out.print("\n🥀 I was feeling: ");
+            for (int e : meanings) {
+                System.out.print(emotionNames[e] + " ");
+            }
+            System.out.println(hiddenEmoji);
+
+            System.out.println("\n--- A new feeling stirs ---");
+        }
+
+        System.out.println("\n🌌 The emotions fade into silence...");
+    }
+
+    static String randomEmojiFrom(String[] arr) {
+        return arr[rand.nextInt(arr.length)];
+    }
+
+    static GuessSet generateEmojiOptions(int correctEmotion, String hiddenEmoji) {
+        Set<String> optionSet = new HashSet<>();
+        String correctEmoji;
+
+        do {
+            correctEmoji = randomEmojiFrom(emotionEmojiPool[correctEmotion]);
+        } while (correctEmoji.equals(hiddenEmoji));
+
+        optionSet.add(correctEmoji);
+
+        while (optionSet.size() < 6) {
+            int randomEmotion = rand.nextInt(emotionEmojiPool.length);
+            if (randomEmotion != correctEmotion) {
+                optionSet.add(randomEmojiFrom(emotionEmojiPool[randomEmotion]));
+            }
+        }
+
+        List<String> options = new ArrayList<>(optionSet);
+        Collections.shuffle(options);
+        return new GuessSet(options, correctEmoji);
+    }
+}
